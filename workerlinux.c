@@ -115,10 +115,9 @@ void open_file(GtkWidget *widget, gpointer data)
 void generate_report(GtkWidget *widget, gpointer data)
 {
     const char *worker = gtk_entry_get_text(GTK_ENTRY(worker_entry));
+    
     char buffer[1024], output[2048] = "";
     FILE *file = fopen("worker.dat", "r");
-    struct tm tm_in, tm_out;
-    time_t time_in, time_out;
 
     if (!file)
     {
@@ -127,51 +126,6 @@ void generate_report(GtkWidget *widget, gpointer data)
         gtk_widget_destroy(dialog);
         return;
     }
-
-    GtkTextBuffer *buffer_widget = gtk_text_view_get_buffer(GTK_TEXT_VIEW(reports_textview));
-    gtk_text_buffer_set_text(buffer_widget, "", -1);
-
-    while (fgets(buffer, 1024, file))
-    {
-        char file_worker[10], work_in[20], work_out[20], job[10];
-        sscanf(buffer, "%[^,],%[^,],%[^,],%[^\n]", file_worker, work_in, work_out, job);
-
-        if (strcmp(file_worker, worker) == 0)
-        {
-            strptime(work_in, "%Y/%m/%d %H:%M", &tm_in);
-            strptime(work_out, "%Y/%m/%d %H:%M", &tm_out);
-
-            time_in = mktime(&tm_in);
-            time_out = mktime(&tm_out);
-
-            double hours_worked = difftime(time_out, time_in) / 3600;
-
-            char line[256];
-            sprintf(line, "%s,%.2f,%s\n", worker, hours_worked, job);
-            strcat(output, line);
-        }
-    }
-    fclose(file);
-    gtk_text_buffer_set_text(buffer_widget, output, -1);
-}
-
-void list_dates(GtkWidget *widget, gpointer data)
-{
-    const char *work_in = gtk_entry_get_text(GTK_ENTRY(workin_entry));
-    char buffer[1024], output[2048] = "";
-    FILE *file = fopen("worker.dat", "r");
-    struct tm tm_in;
-
-    if (!file)
-    {
-        GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_CLOSE, "Failed to open worker.dat!");
-        gtk_dialog_run(GTK_DIALOG(dialog));
-        gtk_widget_destroy(dialog);
-        return;
-    }
-
-    strptime(work_in, "%Y/%m/%d %H:%M", &tm_in);
-    time_t time_in = mktime(&tm_in);
 
     GtkTextBuffer *buffer_widget = gtk_text_view_get_buffer(GTK_TEXT_VIEW(reports_textview));
     gtk_text_buffer_set_text(buffer_widget, "", -1);
@@ -179,14 +133,41 @@ void list_dates(GtkWidget *widget, gpointer data)
     while (fgets(buffer, 1024, file))
     {
         char file_worker[10], file_work_in[20], file_work_out[20], file_job[10];
-        struct tm file_tm_in;
-        time_t file_time_in;
-
         sscanf(buffer, "%[^,],%[^,],%[^,],%[^\n]", file_worker, file_work_in, file_work_out, file_job);
-        strptime(file_work_in, "%Y/%m/%d %H:%M", &file_tm_in);
-        file_time_in = mktime(&file_tm_in);
 
-        if (difftime(file_time_in, time_in) >= 0)
+        if (strcmp(file_worker, worker) == 0)
+        {
+            char line[256];
+            sprintf(line, "%s,%s,%s\n", file_worker, file_work_in, file_job);
+            strcat(output, line);
+        }
+    }
+    fclose(file);
+    gtk_text_buffer_set_text(buffer_widget, output, -1);
+}
+void list_dates(GtkWidget *widget, gpointer data)
+{
+    const char *workin_entrys = gtk_entry_get_text(GTK_ENTRY(workin_entry));
+    char buffer[1024], output[2048] = "";
+    FILE *file = fopen("worker.dat", "r");
+
+    if (!file)
+    {
+        GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_CLOSE, "Failed to open worker.dat!");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+
+    GtkTextBuffer *buffer_widget = gtk_text_view_get_buffer(GTK_TEXT_VIEW(reports_textview));
+    gtk_text_buffer_set_text(buffer_widget, "", -1);
+
+    while (fgets(buffer, 1024, file))
+    {
+        char file_worker[10], file_work_in[20], file_work_out[20], file_job[10];
+        sscanf(buffer, "%[^,],%[^,],%[^,],%[^\n]", file_worker, file_work_in, file_work_out, file_job);
+
+        if (strcmp(file_work_in, workin_entrys) >= 0)
         {
             char line[256];
             sprintf(line, "%s,%s,%s\n", file_worker, file_work_in, file_job);
